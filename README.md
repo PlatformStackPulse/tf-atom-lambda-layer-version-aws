@@ -1,30 +1,60 @@
-# Terraform Module Template
+# tf-atom-lambda-layer-version-aws
 
 <!-- Badges: Update REPO_OWNER/REPO_NAME after creating from template -->
-[![CI](https://github.com/PlatformStackPulse/terraform-atom-molecule-module-template/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
-[![Release](https://github.com/PlatformStackPulse/terraform-atom-molecule-module-template/actions/workflows/auto-release.yml/badge.svg)](../../actions/workflows/auto-release.yml)
-[![CodeQL](https://github.com/PlatformStackPulse/terraform-atom-molecule-module-template/actions/workflows/codeql.yml/badge.svg)](../../actions/workflows/codeql.yml)
-[![Changelog](https://github.com/PlatformStackPulse/terraform-atom-molecule-module-template/actions/workflows/changelog.yml/badge.svg)](../../actions/workflows/changelog.yml)
-![Latest Release](https://img.shields.io/github/v/release/PlatformStackPulse/terraform-atom-molecule-module-template?label=latest%20release&sort=semver)
-![Terraform](https://img.shields.io/badge/terraform-%3E%3D1.6.0-blue?logo=terraform)
-![License](https://img.shields.io/github/license/PlatformStackPulse/terraform-atom-molecule-module-template)
+[![CI](https://github.com/PlatformStackPulse/tf-atom-lambda-layer-version-aws/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+[![Release](https://github.com/PlatformStackPulse/tf-atom-lambda-layer-version-aws/actions/workflows/auto-release.yml/badge.svg)](../../actions/workflows/auto-release.yml)
+[![CodeQL](https://github.com/PlatformStackPulse/tf-atom-lambda-layer-version-aws/actions/workflows/codeql.yml/badge.svg)](../../actions/workflows/codeql.yml)
+[![Changelog](https://github.com/PlatformStackPulse/tf-atom-lambda-layer-version-aws/actions/workflows/changelog.yml/badge.svg)](../../actions/workflows/changelog.yml)
+![Latest Release](https://img.shields.io/github/v/release/PlatformStackPulse/tf-atom-lambda-layer-version-aws?label=latest%20release&sort=semver)
+![Terraform](https://img.shields.io/badge/terraform-%3E%3D1.11.3-blue?logo=terraform)
+![License](https://img.shields.io/github/license/PlatformStackPulse/tf-atom-lambda-layer-version-aws)
 
-A production-ready template for creating Terraform modules following the **one module per repository** best practice, with built-in CI/CD, security scanning, testing, documentation generation, and publishing to public registries.
+A single-purpose ("atom") Terraform module for provisioning an **AWS Lambda layer version** with consistent [tf-label](https://github.com/PlatformStackPulse/tf-label) naming and tagging, an `enabled` toggle, and gold-standard module tooling (native testing, security scanning, docs generation, and CI/CD).
 
 ## Features
 
-- **One Module Per Repo** — Module lives at the root; no nested `modules/` directory
-- **Registry Publishing** — Auto-publish to Terraform Registry, Artifactory, or GitLab on release
-- **Native Terraform Testing** — `terraform test` with mock providers (no external tools)
-- **Security Scanning** — Trivy IaC scanning for HIGH/CRITICAL vulnerabilities
-- **Linting** — TFLint with AWS ruleset (preset "all")
-- **Auto Documentation** — terraform-docs generates README sections on every commit
-- **GitHub Actions CI/CD** — Workflows for the full module lifecycle
-- **Auto Release** — CI passes on main → auto-tag → GitHub Release created
+- **tf-label Naming & Tagging** — Standard `namespace`/`environment`/`stage`/`name` context yields consistent, globally-unique IDs and merged tags on every resource
+- **Enable/Disable Toggle** — `enabled = false` provisions no resources (safe teardown / conditional deployment)
+- **Atom Composition Ready** — Designed to be composed into molecules/cells via context chaining (`context = module.this.context`)
+- **Native Terraform Testing** — `terraform test` with a mock AWS provider (no external tooling, no real AWS calls)
+- **Security Scanning** — Trivy IaC scanning for HIGH/CRITICAL findings
+- **Linting** — TFLint with the AWS ruleset (preset "all")
+- **Auto Documentation** — terraform-docs regenerates the inputs/outputs table on every commit
+- **GitHub Actions CI/CD** — Format, validate, lint, test, and security gates, with auto-release on merge to `main`
 - **Pre-Commit Hooks** — Format, validate, lint, docs, and security on every commit
-- **Conventional Commits** — Enforced commit message format
-- **Semantic Versioning** — Automated version management and releases
-- **DevContainer** — VS Code remote development ready
+- **Semantic Versioning** — Conventional-commit-driven automated releases
+
+## Usage
+
+```hcl
+module "lambda_layer_version" {
+  source = "git::https://github.com/PlatformStackPulse/tf-atom-lambda-layer-version-aws.git?ref=v1.0.0"
+
+  # tf-label context (required for consistent naming)
+  namespace   = "eg"
+  stage       = "prod"
+  name        = "shared-deps"
+  environment = "us-west-2"
+
+  tags = {
+    Project = "platform"
+    Owner   = "platform-engineering"
+  }
+}
+```
+
+Disable the module (create nothing) by setting `enabled = false`:
+
+```hcl
+module "lambda_layer_version" {
+  source = "git::https://github.com/PlatformStackPulse/tf-atom-lambda-layer-version-aws.git?ref=v1.0.0"
+
+  enabled   = false
+  namespace = "eg"
+  stage     = "prod"
+  name      = "shared-deps"
+}
+```
 
 ## CI Pipeline
 
@@ -74,43 +104,6 @@ make all
 6. Update this `README.md`
 
 See [TEMPLATE_GUIDE.md](TEMPLATE_GUIDE.md) for detailed instructions.
-
-## Usage
-
-### From GitHub
-
-```hcl
-module "this" {
-  source = "github.com/PlatformStackPulse/terraform-aws-my-module?ref=v1.0.0"
-
-  name        = "my-resource"
-  environment = "dev"
-  namespace   = "myorg"
-
-  tags = {
-    Project = "example"
-    Owner   = "platform-engineering"
-  }
-}
-```
-
-### From Terraform Registry
-
-```hcl
-module "this" {
-  source  = "PlatformStackPulse/my-module/aws"
-  version = "~> 1.0"
-
-  name        = "my-resource"
-  environment = "dev"
-  namespace   = "myorg"
-
-  tags = {
-    Project = "example"
-    Owner   = "platform-engineering"
-  }
-}
-```
 
 ## Module Structure
 
@@ -312,6 +305,32 @@ No resources.
 |------|-------------|
 | <a name="output_enabled"></a> [enabled](#output\_enabled) | Whether the module is enabled. |
 <!-- END_TF_DOCS -->
+
+## Tests
+
+This module ships native `terraform test` unit tests that use a **mock AWS provider** — no real AWS
+credentials or API calls are required. The tests assert only on plan-known values (the tf-label
+context and the `enabled` flag), so they run fully offline.
+
+```bash
+# One-time init (no backend needed)
+terraform init -backend=false
+
+# Run the unit tests
+terraform test -test-directory=tests/unit
+
+# Or via the Makefile
+make test-unit      # unit tests only
+make test           # all tests
+```
+
+| Test file | Run block | What it verifies |
+|-----------|-----------|------------------|
+| `tests/unit/main_test.tftest.hcl` | `creates_when_enabled` | Module is enabled by default and exposes `output.enabled == true` |
+| `tests/unit/main_test.tftest.hcl` | `disabled_creates_nothing` | With `enabled = false`, `output.enabled == false` (module creates nothing) |
+
+Integration tests (real AWS) live under `tests/integration/` and run with
+`terraform test -test-directory=tests/integration`.
 
 ## Learning Materials
 
